@@ -33,7 +33,7 @@ namespace
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
-constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
+constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
@@ -467,8 +467,19 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       odometry_publisher_);
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
-  odometry_message.header.frame_id = odom_params_.odom_frame_id;
-  odometry_message.child_frame_id = odom_params_.base_frame_id;
+   std::string controller_namespace = std::string(node_->get_namespace());
+
+  if (controller_namespace == "/")
+  {
+    controller_namespace = "";
+  }
+  else
+  {
+    controller_namespace = controller_namespace + "/";
+  }
+
+  odometry_message.header.frame_id = controller_namespace + odom_params_.odom_frame_id;
+  odometry_message.child_frame_id = controller_namespace + odom_params_.base_frame_id;
 
   // limit the publication on the topics /odom and /tf
   publish_rate_ = node_->get_parameter("publish_rate").as_double();
@@ -499,8 +510,10 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
   // keeping track of odom and base_link transforms only
   auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
   odometry_transform_message.transforms.resize(1);
-  odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
-  odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
+    odometry_transform_message.transforms.front().header.frame_id =
+    controller_namespace + odom_params_.odom_frame_id;
+  odometry_transform_message.transforms.front().child_frame_id =
+    controller_namespace + odom_params_.base_frame_id;
 
   previous_update_timestamp_ = node_->get_clock()->now();
   return CallbackReturn::SUCCESS;
