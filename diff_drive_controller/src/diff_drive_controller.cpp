@@ -467,15 +467,14 @@ CallbackReturn DiffDriveController::on_configure(const rclcpp_lifecycle::State &
       odometry_publisher_);
 
   auto & odometry_message = realtime_odometry_publisher_->msg_;
-   std::string controller_namespace = std::string(node_->get_namespace());
+  std::string controller_namespace = std::string(node_->get_namespace());
 
-  if (controller_namespace == "/")
-  {
-    controller_namespace = "";
+  if ((!controller_namespace.empty()) && (controller_namespace[0] == '/')) {
+    controller_namespace.erase(0, 1);
   }
-  else
-  {
-    controller_namespace = controller_namespace + "/";
+
+  if (!controller_namespace.empty()) {
+    controller_namespace.append("/");
   }
 
   odometry_message.header.frame_id = controller_namespace + odom_params_.odom_frame_id;
